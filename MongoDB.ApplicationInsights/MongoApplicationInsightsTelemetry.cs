@@ -82,14 +82,15 @@ namespace MongoDB.ApplicationInsights {
                             " | " + evt.DatabaseNamespace.ToString();
             var dependencyName = target + " | " + evt.CommandName;
 
-            var telemetry = new DependencyTelemetry() {
+            var telemetry = new DependencyTelemetry {
                 Name = dependencyName,
                 Type = "MongoDB",
                 Target = target,
                 // Command can't be null -- the CommandStartedEvent constructor throws to prevent this
-                Data = evt.Command.ToString(),
+                Data = evt.CommandName == "insert" ? "" : evt.Command.ToString(),
                 Success = true,
             };
+            
             telemetry.GenerateOperationId();
             telemetry.Timestamp = DateTimeOffset.UtcNow;
 
