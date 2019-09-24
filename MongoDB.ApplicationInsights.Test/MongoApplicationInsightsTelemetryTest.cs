@@ -20,11 +20,11 @@ namespace MongoDB.ApplicationInsights.Test
 {
     public class MongoApplicationInsightsTelemetryTest
     {
-        class Mocks
+        private class Mocks
         {
-            public StubTelemetry StubTelemetry { get; }
-            public ITelemetryChannel TelemetryChannel { get => StubTelemetry.TelemetryChannel; }
-            public TelemetryClient TelemetryClient { get => StubTelemetry.TelemetryClient; }
+            private StubTelemetry StubTelemetry { get; }
+            public ITelemetryChannel TelemetryChannel => StubTelemetry.TelemetryChannel;
+            public TelemetryClient TelemetryClient => StubTelemetry.TelemetryClient;
             public MongoApplicationInsightsTelemetry Telemetry { get; }
 
             public Mocks(bool createTelemetry = true, MongoApplicationInsightsSettings settings = null)
@@ -47,8 +47,7 @@ namespace MongoDB.ApplicationInsights.Test
                 TelemetryChannel.Received(1).Send(Arg.Any<ITelemetry>());
                 return (DependencyTelemetry)TelemetryChannel
                         .ReceivedCalls()
-                        .Where(c => c.GetMethodInfo().Name == "Send")
-                        .Single()
+                        .Single(c => c.GetMethodInfo().Name == "Send")
                         .GetArguments()[0];
             }
         }
@@ -112,7 +111,7 @@ namespace MongoDB.ApplicationInsights.Test
             result.Should().Be("127.0.0.1:27017");
         }
 
-        private static readonly ConnectionId _connectionId = new ConnectionId(
+        private static readonly ConnectionId ConnectionId = new ConnectionId(
             new ServerId(new ClusterId(1), new DnsEndPoint("localhost", 27017)));
 
         [Test]
@@ -126,11 +125,11 @@ namespace MongoDB.ApplicationInsights.Test
                     new DatabaseNamespace("test"), 
                     null, 
                     1, 
-                    _connectionId));
+                    ConnectionId));
             // Complete the command and check no telemetry was recorded
             mocks.Telemetry.OnCommandSucceeded(
                 new CommandSucceededEvent("saslStart", new BsonDocument(), null, 
-                    1, _connectionId, TimeSpan.FromSeconds(1)));
+                    1, ConnectionId, TimeSpan.FromSeconds(1)));
             mocks.TelemetryChannel.DidNotReceive().Send(Arg.Any<ITelemetry>());
         }
 
@@ -141,15 +140,15 @@ namespace MongoDB.ApplicationInsights.Test
                 new DatabaseNamespace("test"),
                 null,
                 requestId,
-                _connectionId);
+                ConnectionId);
 
         private static CommandSucceededEvent CreateFindSucceededEvent(int requestId) =>
             new CommandSucceededEvent("find", new BsonDocument(), null,
-                    requestId, _connectionId, TimeSpan.FromSeconds(1));
+                    requestId, ConnectionId, TimeSpan.FromSeconds(1));
 
         private static CommandFailedEvent CreateFindFailedEvent(int requestId) =>
             new CommandFailedEvent("find", new Exception("oh dear"), null,
-                requestId, _connectionId, TimeSpan.FromSeconds(1));
+                requestId, ConnectionId, TimeSpan.FromSeconds(1));
 
         [Test]
         public void CommandSucceededNotStartedIgnored()
