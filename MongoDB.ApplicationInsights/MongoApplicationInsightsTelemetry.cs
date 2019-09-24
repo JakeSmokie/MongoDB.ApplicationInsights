@@ -1,12 +1,12 @@
-﻿using Microsoft.ApplicationInsights;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Net;
+using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility.Implementation.Tracing;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Events;
-using System;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Net;
 
 namespace MongoDB.ApplicationInsights {
     internal struct CachedQuery {
@@ -23,8 +23,9 @@ namespace MongoDB.ApplicationInsights {
         private readonly ConcurrentDictionary<int, CachedQuery> _queryCache =
             new ConcurrentDictionary<int, CachedQuery>();
 
-        private readonly TelemetryClient _telemetryClient;
         private readonly MongoApplicationInsightsSettings _settings;
+
+        private readonly TelemetryClient _telemetryClient;
         private DateTime _nextPruneTime;
 
         public MongoApplicationInsightsTelemetry(
@@ -79,7 +80,7 @@ namespace MongoDB.ApplicationInsights {
             }
 
             var target = FormatEndPoint(evt.ConnectionId.ServerId.EndPoint) +
-                            " | " + evt.DatabaseNamespace.ToString();
+                         " | " + evt.DatabaseNamespace;
             var dependencyName = target + " | " + evt.CommandName;
 
             var telemetry = new DependencyTelemetry {
@@ -88,9 +89,9 @@ namespace MongoDB.ApplicationInsights {
                 Target = target,
                 // Command can't be null -- the CommandStartedEvent constructor throws to prevent this
                 Data = evt.CommandName == "insert" ? "" : evt.Command.ToString(),
-                Success = true,
+                Success = true
             };
-            
+
             telemetry.GenerateOperationId();
             telemetry.Timestamp = DateTimeOffset.UtcNow;
 
