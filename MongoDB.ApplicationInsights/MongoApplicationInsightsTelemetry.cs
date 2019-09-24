@@ -9,12 +9,12 @@ using System.Diagnostics;
 using System.Net;
 
 namespace MongoDB.ApplicationInsights {
-    struct CachedQuery {
+    internal struct CachedQuery {
         public DateTime CachedAt { get; set; }
         public DependencyTelemetry Telemetry { get; set; }
     }
 
-    internal class MongoApplicationInsightsTelemetry {
+    internal sealed class MongoApplicationInsightsTelemetry {
         // Ideally we'd use a ConditionalWeakTable here, but there are no actual objects that
         // we can track the lifetime of in the callbacks from mongo. Instead, the time the
         // query is cached at is marked, and then periodically a scan is done (triggered
@@ -78,9 +78,9 @@ namespace MongoDB.ApplicationInsights {
                 return;
             }
 
-            string target = FormatEndPoint(evt.ConnectionId.ServerId.EndPoint) +
+            var target = FormatEndPoint(evt.ConnectionId.ServerId.EndPoint) +
                             " | " + evt.DatabaseNamespace.ToString();
-            string dependencyName = target + " | " + evt.CommandName;
+            var dependencyName = target + " | " + evt.CommandName;
 
             var telemetry = new DependencyTelemetry() {
                 Name = dependencyName,
@@ -114,7 +114,7 @@ namespace MongoDB.ApplicationInsights {
         }
 
         internal void OnCommandSucceeded(CommandSucceededEvent evt) {
-            if (!_queryCache.TryRemove(evt.RequestId, out CachedQuery query)) {
+            if (!_queryCache.TryRemove(evt.RequestId, out var query)) {
                 return;
             }
 
@@ -123,7 +123,7 @@ namespace MongoDB.ApplicationInsights {
         }
 
         internal void OnCommandFailed(CommandFailedEvent evt) {
-            if (!_queryCache.TryRemove(evt.RequestId, out CachedQuery query)) {
+            if (!_queryCache.TryRemove(evt.RequestId, out var query)) {
                 return;
             }
 
